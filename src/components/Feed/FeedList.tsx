@@ -13,7 +13,7 @@ export default function FeedList({ userFeeds }: FeedListProps) {
   const sortedFeeds = userFeeds.sort((a: UserFeed, b: UserFeed) => {
     // const dateA = new Date(a.feeds.checkedAt).getTime(); // Convert to timestamp
     // const dateB = new Date(b.feeds.checkedAt).getTime(); // Convert to timestamp
-    return a.view - b.view;
+    return (a.view as number) - (b.view as number);
   });
   console.log("sortedFeeds:", sortedFeeds)
   return (

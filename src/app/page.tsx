@@ -15,7 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [searchPerformed, setSearchPerformed] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [views, setViews] = useState<number[]>([])
+  const [views, setViews] = useState<(number | string)[]>([])
   const [categories, setCategories] = useState<{ [key: string]: string[] }>({})
   const [selectedView, setSelectedView] = useState<string>("all")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
@@ -59,17 +59,18 @@ export default function Home() {
           setData(subData)
           
           // 提取所有的 views 和 categories
-          const allViews = [...new Set(subData.map((item: UserFeed) => item.view))]
+          const allViews = Array.from(new Set(subData.map((item: UserFeed) => item.view as string | number)));
           const categoriesByView: { [key: string]: string[] } = {}
           
-          allViews.forEach(view => {
-            const viewCategories = subData
-              .filter(item => item.view === view)
-              .map(item => item.category || "Ungrouped")
-            categoriesByView[view] = ["all", ...new Set(viewCategories)]
-          })
+          allViews.forEach((view) => {
+            const viewCategories: string[] = subData
+              .filter((item: UserFeed) => item.view === view)
+              .map((item: UserFeed) => item.category || "Ungrouped");
           
-          setViews(allViews)
+            categoriesByView[view as string | number] = ["all", ...new Set(viewCategories)];
+          });
+          
+          setViews(allViews as (string | number)[]);
           setCategories(categoriesByView)
           setFilteredData(subData)
         } else {
@@ -165,7 +166,7 @@ export default function Home() {
                     <SelectContent>
                       <SelectItem value="all">All Views</SelectItem>
                       {views.map(view => (
-                        <SelectItem key={view} value={`${view}`}>{ViewNameList[view]}</SelectItem>
+                        <SelectItem key={view} value={`${view}`}>{ViewNameList[view as number]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

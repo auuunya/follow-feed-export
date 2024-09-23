@@ -2,7 +2,7 @@
 export interface UserFeed {
     userId: string;
     feedId: string;
-    view: number;
+    view: number | string;
     category: string | null;
     title: string | null;
     isPrivate: boolean;
