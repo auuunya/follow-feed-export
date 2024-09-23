@@ -191,6 +191,15 @@ export default function Home() {
           )}
         </AnimatePresence>
       </div>
+      <footer className="py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p>Github: <a href="https://github.com/auuunya/follow-feed-export" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800 dark:hover:text-gray-200">Follow Feed Export</a></p>
+        <p>API: https://api.follow.is</p>
+        <div className="mt-4 max-w-2xl mx-auto">
+          <p className="mb-2"><strong>Disclaimer:</strong> This project is for educational purposes only.</p>
+          <p className="mb-2">It is not intended for commercial use or profit.</p>
+          <p>The developers of this project are not responsible for any misuse or violation of terms of service of the APIs used.</p>
+        </div>
+      </footer>
     </div>
   )
 }
