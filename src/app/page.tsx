@@ -1,101 +1,196 @@
-import Image from "next/image";
+'use client'
+
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import FeedList from "../components/Feed/FeedList"
+import { UserFeed, Category, FeedDetails, ViewNameList } from "../types/view"
+import SearchBar from "../components/SearchBar/SearchBar"
+import { Loader2, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { generateOpml } from "../service/explorer"
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [data, setData] = useState<UserFeed[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searchPerformed, setSearchPerformed] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [views, setViews] = useState<number[]>([])
+  const [categories, setCategories] = useState<{ [key: string]: string[] }>({})
+  const [selectedView, setSelectedView] = useState<string>("all")
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [filteredData, setFilteredData] = useState<UserFeed[]>([])
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const fetchUserInfo = async (query: string) => {
+    const queryUserInfo = `${process.env.NEXT_PUBLIC_API_PROFILE}${query.trim()}`
+    const response = await fetch(queryUserInfo)
+    if (!response.ok) {
+      throw new Error('Failed to fetch user info')
+    }
+    return response.json()
+  }
+
+  const fetchUserSubscriptions = async (userId: string) => {
+    const querySubscriptions = `${process.env.NEXT_PUBLIC_API_SUBSCRIPTIONS}${userId}`;
+    const response = await fetch(querySubscriptions)
+    if (!response.ok) {
+      throw new Error('Failed to fetch user subscriptions')
+    }
+    return response.json()
+  }
+
+  const handleSearch = async (query: string) => {
+    setLoading(true)
+    setError(null)
+    setSearchPerformed(true)
+    setSelectedView("all")
+    setSelectedCategory("all")
+    setFilteredData([])
+
+    try {
+      const userInfo = await fetchUserInfo(query)
+
+      if (!userInfo.code) {
+        const userId = userInfo.data.id
+        const subscriptions = await fetchUserSubscriptions(userId)
+
+        if (!subscriptions.code) {
+          const subData = subscriptions.data.filter((item: UserFeed) => !item.hasOwnProperty("lists"))
+          setData(subData)
+          
+          // 提取所有的 views 和 categories
+          const allViews = [...new Set(subData.map((item: UserFeed) => item.view))]
+          const categoriesByView: { [key: string]: string[] } = {}
+          
+          allViews.forEach(view => {
+            const viewCategories = subData
+              .filter(item => item.view === view)
+              .map(item => item.category || "Ungrouped")
+            categoriesByView[view] = ["all", ...new Set(viewCategories)]
+          })
+          
+          setViews(allViews)
+          setCategories(categoriesByView)
+          setFilteredData(subData)
+        } else {
+          setError('No subscriptions found for this user')
+        }
+      } else {
+        setError('User not found')
+      }
+    } catch (error) {
+      console.error("Error fetching search results:", error)
+      setError('An error occurred while fetching data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExport = () => {
+    const opmlString = generateOpml(filteredData||data)
+    const blob = new Blob([opmlString], { type: 'application/opml' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'exporter_feeds.opml'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleViewChange = (value: string) => {
+    setSelectedView(value)
+    setSelectedCategory("all")
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value)
+  }
+
+  useEffect(() => {
+    const filtered = data.filter(item => 
+      (selectedView === "all" || item.view === Number(selectedView)) &&
+      (selectedCategory === "all" || item.category === selectedCategory || (selectedCategory === "Ungrouped" && !item.category))
+    )
+    setFilteredData(filtered)
+  }, [selectedView, selectedCategory, data])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-center mb-12 text-gray-800 dark:text-gray-100">Follow Feed Export</h1>
+        
+        <div className={`transition-all duration-300 ease-in-out ${searchPerformed && filteredData.length > 0 ? 'mb-8' : 'flex justify-center items-center h-[calc(100vh-200px)]'}`}>
+          <SearchBar onSearch={handleSearch} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex justify-center items-center mt-8"
+            >
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 text-red-500 text-center"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        <AnimatePresence>
+          {searchPerformed && !loading && filteredData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4 mt-8"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex space-x-4">
+                  <Select value={selectedView} onValueChange={handleViewChange}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select View" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Views</SelectItem>
+                      {views.map(view => (
+                        <SelectItem key={view} value={`${view}`}>{ViewNameList[view]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedView !== "all" && (
+                    <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories[selectedView]?.map(category => (
+                          <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <Button onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" /> Export
+                </Button>
+              </div>
+              <FeedList userFeeds={filteredData} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
-  );
+  )
 }

@@ -1,0 +1,54 @@
+.container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .folder {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .folderTitle {
+    padding: 10px;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+  }
+  
+  .folderTitle:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .folderContent {
+    padding: 10px;
+  }
+  
+  .feedItem {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+  }
+  
+  .feedItem img {
+    margin-right: 10px;
+  }
+  
+  .feedLink {
+    color: #0070f3;
+    text-decoration: none;
+  }
+  
+  .feedLink:hover {
+    text-decoration: underline;
+  }
+  
