@@ -21,7 +21,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         type="text"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Search for feeds..."
+        placeholder="Search for userId, eg: 57332895133365248"
         className="flex-grow rounded-r-none focus:ring-0 focus:border-blue-500"
       />
       <Button 
