@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Rss, Clock, ExternalLink } from "lucide-react"
+import { Rss, ExternalLink } from "lucide-react"
 import { FeedDetails } from "../../types/view"
 
 interface FeedDetailsProps {

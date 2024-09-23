@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import FeedList from "../components/Feed/FeedList"
-import { UserFeed, Category, FeedDetails, ViewNameList } from "../types/view"
+import { UserFeed, ViewNameList } from "../types/view"
 import SearchBar from "../components/SearchBar/SearchBar"
 import { Loader2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
